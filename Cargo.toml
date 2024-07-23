@@ -1,8 +1,9 @@
 [workspace]
-members = ["2023/day-01"]
+members = ["2023/day-01", "2023/day-02", "common"]
 resolver = "2"
 
 [workspace.dependencies]
+common.path = "common"
 
 [workspace.package]
 edition = "2021"
