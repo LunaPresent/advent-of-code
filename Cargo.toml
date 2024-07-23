@@ -1,0 +1,9 @@
+[workspace]
+members = ["2023/day-01"]
+resolver = "2"
+
+[workspace.dependencies]
+
+[workspace.package]
+edition = "2021"
+authors = ["Luna Present <luna.present@outlook.com>"]
