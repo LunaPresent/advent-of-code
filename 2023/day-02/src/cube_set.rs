@@ -19,29 +19,31 @@ impl FromStr for CubeSet {
 			colours.push(&s[head..head + i]);
 			head = head + i + 2;
 		}
-		colours.push(s.get(head..).ok_or(ParseStructError::new::<CubeSet>(s))?);
+		colours.push(&s[head..]);
 
 		let (mut red, mut green, mut blue) = (0, 0, 0);
-		for s in colours {
-			let i: usize = s.find(" ").ok_or(ParseStructError::new::<CubeSet>(s))?;
-			let n: u32 = s[..i]
+		for c in colours {
+			let i: usize = c
+				.find(" ")
+				.ok_or(ParseStructError::new::<CubeSet>(s).at(head))?;
+			let n: u32 = c[..i]
 				.parse()
-				.map_err(|_| ParseStructError::new::<CubeSet>(s))?;
-			let colour: &str = &s[i + 1..];
+				.map_err(|e| ParseStructError::new::<CubeSet>(s).at(head).because(e))?;
+			let colour: &str = &c[i + 1..];
 
 			match colour {
 				"red" => red = n,
 				"green" => green = n,
 				"blue" => blue = n,
-				_ => return Err(ParseStructError::new::<CubeSet>(s)),
+				_ => {
+					return Err(ParseStructError::new::<CubeSet>(s)
+						.at(i + 1)
+						.because("invalid colour"))
+				}
 			};
 		}
 
-		Ok(CubeSet {
-			red: red,
-			green: green,
-			blue: blue,
-		})
+		Ok(CubeSet { red, green, blue })
 	}
 }
 

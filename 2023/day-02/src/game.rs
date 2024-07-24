@@ -15,32 +15,36 @@ impl FromStr for Game {
 
 	// definitely easier to solve with a regex, however, I'm trying to learn new things and this is more fun
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		// cut of "Game "
-		let mut subs: &str = s.get(5..).ok_or(ParseStructError::new::<Game>(s))?;
+		// cut off "Game "
+		let mut subs: &str = s
+			.get(5..)
+			.ok_or(ParseStructError::new::<Game>(s).at(s.len()))?;
 
-		let i: usize = subs.find(": ").ok_or(ParseStructError::new::<Game>(s))?;
-		let game_id = subs
-			.get(..i)
-			.ok_or(ParseStructError::new::<Game>(s))
-			.and_then(|s: &str| {
-				s.parse::<u32>()
-					.map_err(|_| ParseStructError::new::<Game>(s))
-			})?;
-		subs = subs.get(i + 2..).ok_or(ParseStructError::new::<Game>(s))?; // the whole "Game <n>: " header is now stripped off
+		let i: usize = subs.find(": ").ok_or(
+			ParseStructError::new::<Game>(s)
+				.at(s.len())
+				.because("\": \" not found"),
+		)?;
+		let game_id = subs[..i] // this is fine cause I just used find to get i
+			.parse::<u32>()
+			.map_err(|e| ParseStructError::new::<Game>(s).at(5).because(e))?;
+		subs = &subs[i + 2..];
+		// the whole "Game <n>: " header is now stripped off
 
 		let mut game_rolls = Vec::<CubeSet>::new();
 		while let Some(i) = subs.find("; ") {
-			game_rolls.push(
-				subs[..i]
-					.parse::<CubeSet>()
-					.map_err(|_| ParseStructError::new::<Game>(s))?,
-			);
-			subs = subs.get(i + 2..).ok_or(ParseStructError::new::<Game>(s))?;
+			game_rolls.push(subs[..i].parse::<CubeSet>().map_err(|e| {
+				ParseStructError::new::<Game>(s)
+					.at(s.len() - subs.len())
+					.because(e)
+			})?);
+			subs = &subs[i + 2..];
 		}
-		game_rolls.push(
-			subs.parse::<CubeSet>()
-				.map_err(|_| ParseStructError::new::<Game>(s))?,
-		);
+		game_rolls.push(subs.parse::<CubeSet>().map_err(|e| {
+			ParseStructError::new::<Game>(s)
+				.at(s.len() - subs.len())
+				.because(e)
+		})?);
 
 		Ok(Game {
 			id: game_id,

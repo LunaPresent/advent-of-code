@@ -1,11 +1,14 @@
-use std::io::{self, BufRead, BufReader};
+use std::{
+	error::Error,
+	io::{self, BufRead, BufReader},
+};
 
 use cube_set::CubeSet;
 use game::Game;
 mod cube_set;
 mod game;
 
-fn main() -> io::Result<()> {
+fn main() -> Result<(), Box<dyn Error>> {
 	let cube_pool = CubeSet {
 		red: 12,
 		green: 13,
@@ -22,10 +25,10 @@ fn main() -> io::Result<()> {
 	Ok(())
 }
 
-fn sum_of_valid_ids(cube_pool: CubeSet) -> io::Result<u32> {
+fn sum_of_valid_ids(cube_pool: CubeSet) -> Result<u32, Box<dyn Error>> {
 	let mut sum = 0;
 	for line in BufReader::new(io::stdin()).lines() {
-		let game: Game = line?.parse().map_err(|e| io::Error::other(e))?;
+		let game: Game = line?.parse()?;
 		if game.test_possible(cube_pool) {
 			sum += game.id;
 		}
@@ -33,10 +36,10 @@ fn sum_of_valid_ids(cube_pool: CubeSet) -> io::Result<u32> {
 	Ok(sum)
 }
 
-fn sum_of_minimum_set_powers() -> io::Result<u32> {
+fn sum_of_minimum_set_powers() -> Result<u32, Box<dyn Error>> {
 	let mut sum = 0;
 	for line in BufReader::new(io::stdin()).lines() {
-		let game: Game = line?.parse().map_err(|e| io::Error::other(e))?;
+		let game: Game = line?.parse()?;
 		sum += game.minimum_set().power();
 	}
 	Ok(sum)
