@@ -1,40 +1,74 @@
-use std::{
-	fmt::Display,
-	ops::{Add, Sub},
-	str::FromStr,
-};
+use std::str::FromStr;
 
 use common::parse_struct_error::ParseStructError;
 
-use super::category_map::CategoryMap;
+use super::mapper::Mapper;
+use super::mapper_sequence::MapperSequence;
+use super::range_mapping::RangeMapping;
 
-pub struct Almanac<T> {
-	category_maps: Vec<CategoryMap<T>>,
+#[derive(Debug)]
+pub struct Almanac {
+	seeds: Vec<u64>,
+	mapper: Mapper,
 }
 
-impl<T: Ord + Sub<Output = T> + Add<Output = T> + Copy> Almanac<T> {
-	// pub fn lowest_mapped(&self) -> Option<T> {
-	// 	self.seeds.iter().map(|v| self.map_full(*v)).min()
-	// }
+impl Almanac {
+	pub fn lowest_mapped(&self) -> Option<u64> {
+		self.seeds.iter().map(|v| self.mapper.map(*v)).min()
+	}
 
-	pub fn map_full(&self, mut value: T) -> T {
-		for category_map in self.category_maps.iter() {
-			value = category_map.map(value);
-		}
-		value
+	pub fn lowest_mapped_seed_range(&self) -> Option<u64> {
+		let seed_ranges = self
+			.seeds
+			.iter()
+			.step_by(2)
+			.zip(self.seeds.iter().skip(1).step_by(2))
+			.map(|(&start, &range)| RangeMapping {
+				source: start,
+				destination: start,
+				range,
+			});
+
+		seed_ranges
+			.map(|r| self.mapper.map_range(r).map(|r| r.destination).min())
+			.filter_map(|d| d)
+			.min()
 	}
 }
 
-impl<T: FromStr<Err = impl Display + 'static> + Copy> FromStr for Almanac<T> {
+impl FromStr for Almanac {
 	type Err = ParseStructError;
 
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		let category_maps = s
-			.split("\n\n")
-			.map(|s| s.parse())
-			.collect::<Result<_, _>>()
-			.map_err(|e| ParseStructError::new::<Almanac<T>>(s).because(e))?;
+		let seeds_prompt_len = "seeds: ".len();
 
-		Ok(Almanac { category_maps })
+		let (mut seed_str, mapper_sequence_str) = s
+			.split_once("\n\n")
+			.ok_or(ParseStructError::new::<Self>(s).because("invalid format"))?;
+
+		seed_str = seed_str.get(seeds_prompt_len..).ok_or(
+			ParseStructError::new::<Self>(s)
+				.at(s.len())
+				.because("string too short"),
+		)?;
+		let seeds: Vec<u64> = seed_str
+			.split(' ')
+			.map(|s| s.trim())
+			.filter(|s| !s.is_empty())
+			.map(|s| s.parse::<u64>())
+			.collect::<Result<_, _>>()
+			.map_err(|e| {
+				ParseStructError::new::<Self>(s)
+					.at(seeds_prompt_len)
+					.because(e)
+			})?;
+
+		let mapper_sequence: MapperSequence = mapper_sequence_str
+			.parse()
+			.map_err(|e| ParseStructError::new::<Self>(s).because(e))?;
+
+		let mapper = mapper_sequence.flatten();
+
+		Ok(Almanac { seeds, mapper })
 	}
 }

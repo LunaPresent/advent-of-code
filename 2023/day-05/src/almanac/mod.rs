@@ -1,5 +1,6 @@
 mod almanac;
-mod category_map;
+mod mapper;
+mod mapper_sequence;
 mod range_mapping;
 
 pub use almanac::*;
