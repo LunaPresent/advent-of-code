@@ -56,6 +56,13 @@ name = "day-06"
 version = "0.1.0"
 
 [[package]]
+name = "day-07"
+version = "0.1.0"
+dependencies = [
+ "common",
+]
+
+[[package]]
 name = "grid"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

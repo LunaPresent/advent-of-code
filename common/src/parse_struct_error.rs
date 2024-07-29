@@ -12,10 +12,10 @@ pub struct ParseStructError {
 }
 
 impl ParseStructError {
-	pub fn new<T>(from_string: &str) -> Self {
+	pub fn new<T>(from_string: impl ToString) -> Self {
 		Self {
 			struct_name: type_name::<T>().to_owned(),
-			from_string: from_string.to_owned(),
+			from_string: from_string.to_string(),
 			at_char: None,
 			reason: None,
 		}
